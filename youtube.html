@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YouTube Idea Finder</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{--bg:#F2F4F1;--card:#FFFFFF;--ink:#15232B;--mute:#5E6C72;--line:#D5DAD6;--acc:#0E6F6A;--acc-d:#0A5450;--amb:#E3A23B;--bad:#B3392F}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 'Instrument Sans',system-ui,sans-serif}
+header{padding:16px 24px;border-bottom:1px solid var(--line);background:var(--card);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+header h1{margin:0;font-size:19px;letter-spacing:-.01em}
+header span{color:var(--mute);font-size:13px;flex:1}
+.wrap{display:grid;grid-template-columns:240px 1fr;gap:20px;padding:20px 24px;max-width:1320px;margin:auto}
+@media(max-width:860px){.wrap{grid-template-columns:1fr;padding:14px}}
+aside h3{margin:0 0 8px;font-size:13px;color:var(--mute);font-weight:600}
+.hist{display:flex;flex-direction:column;gap:6px;max-height:75vh;overflow:auto}
+.hist button{text-align:left;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer;font:inherit}
+.hist button:hover{border-color:var(--acc)}
+.hist b{display:block;font-size:14px}.hist small{color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px}
+.card h2{margin:0 0 4px;font-size:17px}
+.sub{color:var(--mute);font-size:13px;margin:0 0 12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:620px){.grid{grid-template-columns:1fr}}
+label{display:block;font-size:13px;font-weight:600;margin-bottom:4px}
+input,select,textarea{width:100%;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink)}
+input[type=color]{padding:2px;height:36px}
+textarea{resize:vertical;min-height:70px}
+.full{grid-column:1/-1}
+.btn{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:10px 18px;font:inherit;font-weight:600;cursor:pointer}
+.btn:hover{background:var(--acc-d)}.btn:disabled{opacity:.5;cursor:wait}
+.mini{background:none;border:1px solid var(--line);border-radius:6px;padding:2px 8px;font:inherit;font-size:12px;cursor:pointer;color:var(--mute);text-decoration:none;display:inline-block}
+.mini:hover{border-color:var(--acc);color:var(--acc)}
+.bar{height:6px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;background:var(--acc);width:0;transition:width .5s}
+.msg{color:var(--mute);font-size:14px;margin-top:8px}
+.err{color:var(--bad);font-weight:600;margin-top:8px;white-space:pre-wrap}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600;font-size:13px}
+.tag{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;background:#E5EFEE;color:var(--acc-d)}
+.tag.high{background:#F6E3E0;color:var(--bad)}.tag.medium{background:#FBF0DA;color:#8A5A0B}
+.pos{border:1.5px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;display:block;cursor:pointer}
+.pos.sel{border-color:var(--acc);background:#F5FAF9}
+.pos input[type=radio]{width:auto;margin-right:8px}
+.pos small{color:var(--mute);display:block;margin-top:6px}
+.pos dl{margin:8px 0 0;display:grid;grid-template-columns:130px 1fr;gap:2px 10px;font-size:13px}
+.pos dt{color:var(--mute)}.pos dd{margin:0}
+.item{display:flex;gap:10px;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border:0}.item p{margin:0;white-space:pre-wrap}
+.cc{color:var(--mute);font-size:12px}.cc.over{color:var(--bad);font-weight:700}
+h4{margin:18px 0 4px;font-size:14px}
+details{margin:8px 0}summary{cursor:pointer;font-weight:600}
+.banners{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px}
+.banners figure{margin:0}.banners .dl{margin-top:6px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row select{width:auto}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:760px){.cols{grid-template-columns:1fr}}
+.bc{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px}
+.bc b{font-size:14px}.bc p{margin:4px 0;font-size:14px}
+.bc .line{background:#FBF0DA;border-radius:6px;padding:6px 8px}
+.cpt{border:1px solid var(--line);border-radius:10px;padding:12px}
+.cpt p{margin:3px 0;font-size:14px}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.qa h4{margin:20px 0 6px}.tag.v{background:#FBF0DA;color:#8A5A0B;font-weight:600}.qa .rec{background:#F5FAF9;border-left:3px solid var(--acc);padding:8px 12px;margin:10px 0;border-radius:0 8px 8px 0;font-size:14px}
+.cl{color:var(--acc);font-weight:700;cursor:pointer;text-decoration:underline dotted}.cl:hover{color:var(--acc-d)}
+#modal{position:fixed;inset:0;background:rgba(21,35,43,.55);z-index:50;display:flex;justify-content:flex-end}
+#modal .panel{background:var(--bg);width:min(760px,100%);height:100%;overflow:auto;padding:22px;box-shadow:-8px 0 30px rgba(0,0,0,.2)}
+#modal.hide{display:none}
+#modal .x{float:right}
+.pts{margin:6px 0 0;padding-left:20px}.pts li{margin:4px 0}
+.dsec{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:10px 0}.dsec h4{margin:0 0 4px}.dsec p{margin:0;white-space:pre-wrap}
+a{color:var(--acc)}.hide{display:none}
+.auth{max-width:380px;margin:60px auto;padding:0 16px}
+.tabs{display:flex;gap:6px;margin-bottom:12px}.tabs button{flex:1;padding:8px;border:1px solid var(--line);background:#fff;border-radius:8px;font:inherit;cursor:pointer}.tabs button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+footer{max-width:1320px;margin:0 auto;padding:6px 24px 30px;color:var(--mute);font-size:12px}
+.who{font-size:13px;color:var(--mute)}
+</style>
+<style>
+.mtabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}.mtabs button{flex:1;min-width:200px;padding:12px;border:1.5px solid var(--line);background:#fff;border-radius:10px;font:inherit;font-weight:700;cursor:pointer;text-align:left}.mtabs button small{display:block;font-weight:400;color:var(--mute);margin-top:2px}.mtabs button.on{border-color:var(--acc);background:#F5FAF9;color:var(--acc-d)}
+.verdict{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.vscore{width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;color:#fff;flex:none}
+.vs-good{background:#0E8A5F}.vs-ok{background:#C98A12}.vs-bad{background:#B3392F}
+.meters{flex:1;min-width:240px}
+.brow{display:grid;grid-template-columns:150px 1fr 90px;gap:8px;align-items:center;font-size:13px;margin:5px 0}
+.bl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bt{background:#E9EEEB;border-radius:4px;height:12px;overflow:hidden}.bt i{display:block;height:100%;background:var(--acc)}.bt i.r{background:#B3392F}.bv{text-align:right;color:var(--mute)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:10px 0}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px}.kpi b{display:block;font-size:19px;letter-spacing:-.02em}.kpi span{color:var(--mute);font-size:12px}
+.vc{display:grid;grid-template-columns:168px 1fr;gap:12px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px}
+@media(max-width:620px){.vc{grid-template-columns:1fr}}
+.vc img{width:168px;max-width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px}
+.vc h5{margin:0 0 3px;font-size:15px}.vc h5 a{color:var(--ink);text-decoration:none}.vc h5 a:hover{color:var(--acc)}
+.vc p{margin:4px 0;font-size:14px}.chips{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0}.chip{background:#EEF2EF;border-radius:99px;padding:1px 9px;font-size:12px;color:var(--mute)}.chip b{color:var(--ink)}
+.tag.good{background:#E1F1EC;color:#0A5450}
+.pb{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;margin-bottom:12px}.pb h4{margin:12px 0 4px}.pb p{margin:3px 0;font-size:14px}
+.dsec{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:10px 0}.dsec h4{margin:0 0 4px}.dsec p{margin:0;white-space:pre-wrap}
+.pts{margin:6px 0 0;padding-left:20px}.pts li{margin:4px 0}
+.hint{background:#FBF0DA;border-radius:8px;padding:8px 12px;font-size:13px;margin:8px 0}
+</style>
+</head>
+<body>
+<header><h1>YouTube Idea Finder</h1><span>Check if a topic will work, and find trending topics that can grow your channel.</span><a class="mini" href="index.html">← Competitor tool</a><span class="who hide" id="who"></span><button class="mini hide" id="outBtn" onclick="signOut()">Sign out</button></header>
+
+<div class="auth hide" id="auth"><section class="card"><h2>Welcome</h2><p class="sub">Sign in with the same account you use for the competitor tool.</p>
+<div class="tabs"><button id="tIn" class="on" onclick="authTab(0)">Sign in</button><button id="tUp" onclick="authTab(1)">Create account</button></div>
+<label>Email</label><input id="em" type="email" autocomplete="email"><label style="margin-top:10px">Password (min 8 characters)</label><input id="pw" type="password" autocomplete="current-password">
+<p><button class="btn" id="authBtn" onclick="doAuth()">Sign in</button> <button class="mini" onclick="forgot()">Forgot password</button></p><div class="msg" id="aMsg"></div><div class="err" id="aErr"></div></section></div>
+
+<div id="app" class="hide">
+<div class="wrap">
+  <aside><h3>Past runs</h3><div class="hist" id="hist"></div></aside>
+  <main>
+    <section class="card">
+      <div class="mtabs">
+        <button id="t1" class="on" onclick="setTab(1)">1. Will my topic work?<small>Check demand, competition and the videos already out there</small></button>
+        <button id="t2" onclick="setTab(2)">2. Trending topics for me<small>Based on your channel or domain, with how to get traffic</small></button>
+      </div>
+
+      <div id="f1"><div class="grid">
+        <div class="full"><label>Topic *</label><input id="topic" placeholder="e.g. data science career switch, UPSC prelims strategy, MBA after engineering"></div>
+        <div class="full"><label>Your YouTube channel (optional, tells you what to expect at your size)</label><input id="ch1" placeholder="@yourchannel or channel link"></div>
+        <div><label>Look at videos from the last</label><select id="w1"><option value="30">30 days</option><option value="90" selected>90 days</option><option value="180">6 months</option><option value="365">1 year</option></select></div>
+      </div></div>
+
+      <div id="f2" class="hide"><div class="grid">
+        <div class="full"><label>Your YouTube channel (optional)</label><input id="ch2" placeholder="@yourchannel or channel link. Used to match trends to what you already make."></div>
+        <div class="full"><label>Domains to watch (optional, up to 3, comma separated)</label><input id="domains" placeholder="e.g. data science careers, UPSC, MBA admissions. Leave empty to use your channel or general trending."></div>
+        <div class="full"><label>Where should viewers go after watching? (optional)</label><input id="dest" placeholder="e.g. website, WhatsApp channel, Telegram, app download, lead form"></div>
+        <div><label>Trending in the last</label><select id="w2"><option value="7">7 days</option><option value="14" selected>14 days</option><option value="30">30 days</option></select></div>
+      </div></div>
+
+      <div class="grid" style="margin-top:12px">
+        <div class="full"><label>About your channel or brand and audience (optional, makes ideas fit you)</label><textarea id="brand" style="min-height:56px" placeholder="e.g. Education brand for working professionals who want IIT/IIM certificates. Audience: 24-35, India."></textarea></div>
+        <div><label>Region</label><select id="region"><option value="IN">India</option><option value="">Worldwide</option><option value="US">United States</option><option value="GB">United Kingdom</option><option value="AE">UAE</option><option value="SG">Singapore</option></select></div>
+        <div><label>Language</label><select id="language"><option>English</option><option>Hinglish</option><option>Hindi</option></select></div>
+      </div>
+
+      <details id="set" style="margin-top:10px"><summary>Settings: YouTube key and AI key (stay in this browser)</summary>
+        <div class="grid" style="margin-top:8px">
+          <div class="full"><label>YouTube Data API key (free)</label><input id="ytkey" type="password" autocomplete="off" onchange="saveYt()"><p class="cc" style="margin:4px 0 0">Free: 10,000 units per day. <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank">Enable YouTube Data API v3</a>, then <a href="https://console.cloud.google.com/apis/credentials" target="_blank">create an API key</a>.</p></div>
+          <div><label>How to run the AI step</label><select id="mode" onchange="saveCfg()"><option value="auto">Automatic with my own AI key</option><option value="manual">Manual: copy a prompt into my own AI chat</option></select></div>
+          <div id="autoBox" class="full" style="padding:0"><div class="grid">
+            <div><label>Provider</label><select id="prov" onchange="saveCfg()"><option value="gemini">Google Gemini (free key)</option><option value="claude">Claude (paid key)</option></select></div>
+            <div><label>Model (optional)</label><input id="amodel" onchange="saveCfg()"></div>
+            <div class="full"><label>AI API key</label><input id="akey" type="password" autocomplete="off" onchange="saveCfg()"><p class="cc" id="keyHelp" style="margin:4px 0 0"></p></div>
+          </div></div>
+          <p class="cc full" id="cfgMsg" style="margin:0"></p>
+        </div></details>
+
+      <p><button class="btn" id="go" onclick="go()">Check my topic</button></p>
+      <div class="bar hide" id="bar"><i id="barI"></i></div>
+      <div class="msg" id="msg"></div><div class="err" id="err"></div>
+    </section>
+    <div id="manual"></div>
+    <div id="out"></div>
+  </main>
+</div>
+<footer>Free tool. Numbers come from YouTube's public data. It cannot see other channels' watch time, click-through or retention, and it cannot hear the videos: summaries come from each video's title, description and tags. Verdicts and trend picks show evidence, not a guarantee of results. Your keys stay in your browser.</footer>
+</div>
+
+<script>
+/* ====== CONFIG: same two Supabase values as index.html ====== */
+const SUPABASE_URL = 'https://efkxfkreiikiweuvbqrv.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVma3hma3JlaWlraXdldXZicXJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3NTEwMTUsImV4cCI6MjEwODMyNzAxNX0.XuvQ-VCt4KVI4RieLV4_xsN4GXze6li7SJG7juf2LWQ';
+/* ============================================================ */
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let SBC = null, Y = null, CP = [], UNITS = 0, TAB = 1;
+
+const SYS = 'You are a senior YouTube growth strategist for the Indian market. You work ONLY from the real YouTube data given to you. ' +
+  'Return ONLY valid JSON. No markdown, no commentary, no code fences. ' +
+  'Never invent numbers, videos or channels, and never claim to know what is said inside a video beyond its title, description and tags. Cite evidence from the data. ' +
+  'Never promise that a video will go viral or that a trend will last; talk about potential and evidence and flag estimates as estimates. ' +
+  'Create original angles; do not copy competitor titles. Keep text fields under 40 words unless told otherwise.';
+
+/* ---------- settings (stored only in this browser) ---------- */
+function cfg() { try { return Object.assign({ provider: 'gemini', key: '', model: '', mode: 'auto' }, JSON.parse(localStorage.getItem('mis_ai') || '{}')); } catch (e) { return { provider: 'gemini', key: '', model: '', mode: 'auto' }; } }
+function saveCfg() {
+  const c = { provider: $('#prov').value, key: $('#akey').value.trim(), model: $('#amodel').value.trim(), mode: $('#mode').value };
+  try { localStorage.setItem('mis_ai', JSON.stringify(c)); } catch (e) {}
+  $('#cfgMsg').textContent = 'Saved in this browser only.'; setTimeout(() => $('#cfgMsg').textContent = '', 2500);
+  syncCfgUI();
+}
+function syncCfgUI() {
+  const c = cfg();
+  $('#prov').value = c.provider; $('#akey').value = c.key; $('#amodel').value = c.model; $('#mode').value = c.mode;
+  $('#amodel').placeholder = c.provider === 'gemini' ? 'gemini-3.8-flash' : 'claude-sonnet-5-5';
+  $('#keyHelp').innerHTML = c.provider === 'gemini'
+    ? 'Free key: <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>. Google may use free-tier prompts to improve its products.'
+    : 'Claude key from <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> (paid). Set a spend limit there.';
+  $('#autoBox').classList.toggle('hide', c.mode === 'manual');
+}
+
+/* ---------- AI calls straight from the browser, using the user's own key ---------- */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function parseJson(text) {
+  const a = text.indexOf('{'), b = text.lastIndexOf('}');
+  if (a < 0 || b < 0) throw new Error('No JSON found. Make sure the AI returned only the JSON object.');
+  try { return JSON.parse(text.slice(a, b + 1)); }
+  catch (e) { throw new Error('The JSON is broken or was cut off. Ask the AI to continue or re-send the complete JSON.'); }
+}
+async function geminiCall(c, prompt, search, maxTokens) {
+  let model = c.model || 'gemini-3.8-flash';
+  const urlFor = m => 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(m) + ':generateContent';
+  const body = useSearch => JSON.stringify(Object.assign({
+    systemInstruction: { parts: [{ text: SYS }] },
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: { maxOutputTokens: Math.max(maxTokens, 8192), temperature: 0.7 }
+  }, useSearch ? { tools: [{ google_search: {} }] } : {}));
+  let useSearch = search, tries = 0, swaps = 0;
+  for (;;) {
+    const r = await fetch(urlFor(model), { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': c.key }, body: body(useSearch) });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok) {
+      const cand = (j.candidates || [])[0] || {};
+      const text = ((cand.content || {}).parts || []).map(p => p.text || '').join('');
+      if (!text) throw new Error('The AI returned nothing (it may have blocked the request). Retry.');
+      return { text, searched: useSearch };
+    }
+    const msg = (j.error && j.error.message) || ('Error ' + r.status);
+    // Google retired this model: switch to the one it recommends and remember it
+    const sug = msg.match(/(?:use|to)\s+models\/([\w.\-]+)/i);
+    if (/no longer available|not found|deprecated/i.test(msg) && sug && sug[1] !== model && swaps < 2) {
+      swaps++; model = sug[1]; c.model = model;
+      try { const cur = JSON.parse(localStorage.getItem('mis_ai') || '{}'); cur.model = model; localStorage.setItem('mis_ai', JSON.stringify(cur)); $('#amodel').value = model; } catch (e) {}
+      continue;
+    }
+    if (useSearch && /search|ground|tool/i.test(msg) && r.status !== 429) { useSearch = false; NOSEARCH = true; continue; }
+    if (r.status === 429 && tries < 2) { tries++; $('#msg').textContent = 'Free AI limit reached for this minute. Waiting 30 seconds…'; await sleep(30000); continue; }
+    if (r.status === 429) throw new Error('Your free Gemini quota is used up for now. Try again later (it resets daily) or use Manual mode.');
+    if (r.status === 400 && /API key/i.test(msg)) throw new Error('Gemini says the API key is not valid. Check it in AI settings.');
+    throw new Error('Gemini: ' + msg);
+  }
+}
+async function claudeCall(c, prompt, search, maxTokens) {
+  const messages = [{ role: 'user', content: prompt }]; let text = '';
+  for (let i = 0; i < 4; i++) {
+    const body = { model: c.model || 'claude-sonnet-5-5', max_tokens: maxTokens, system: SYS, messages };
+    if (search) body.tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: 6 }];
+    const r = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'x-api-key': c.key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json', 'anthropic-dangerous-direct-browser-access': 'true' }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error('Claude: ' + ((j.error && j.error.message) || r.status));
+    text = j.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+    if (j.stop_reason === 'pause_turn') { messages.push({ role: 'assistant', content: j.content }); continue; }
+    break;
+  }
+  return { text, searched: search };
+}
+let NOSEARCH = false;
+async function ai(prompt, search, maxTokens) {
+  const c = cfg();
+  if (!c.key) throw new Error('Add your AI key under "AI settings", or switch to Manual mode.');
+  const r = c.provider === 'gemini' ? await geminiCall(c, prompt, search, maxTokens) : await claudeCall(c, prompt, search, maxTokens);
+  return parseJson(r.text);
+}
+
+
+
+let MODE = 0;
+function authTab(m) { MODE = m; $('#tIn').classList.toggle('on', !m); $('#tUp').classList.toggle('on', !!m); $('#authBtn').textContent = m ? 'Create account' : 'Sign in'; $('#aErr').textContent = ''; $('#aMsg').textContent = ''; }
+async function doAuth() {
+  const email = $('#em').value.trim(), password = $('#pw').value;
+  $('#aErr').textContent = ''; $('#aMsg').textContent = '';
+  if (!SBC) { $('#aErr').textContent = 'Setup missing: the Supabase URL and anon key at the top of the script in index.html are still placeholders. Fill them in, save, and upload the file again.'; return; }
+  if (!email || password.length < 8) { $('#aErr').textContent = 'Enter your email and a password of at least 8 characters.'; return; }
+  $('#authBtn').disabled = true;
+  try {
+    if (MODE) {
+      const { data, error } = await SBC.auth.signUp({ email, password });
+      if (error) throw error;
+      if (!data.session) $('#aMsg').textContent = 'Check your email and click the confirmation link, then sign in.';
+    } else {
+      const { error } = await SBC.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    }
+  } catch (e) { $('#aErr').textContent = e.message; }
+  $('#authBtn').disabled = false;
+}
+async function forgot() {
+  const email = $('#em').value.trim();
+  if (!email) { $('#aErr').textContent = 'Type your email first.'; return; }
+  const { error } = await SBC.auth.resetPasswordForEmail(email, { redirectTo: location.origin });
+  if (error) $('#aErr').textContent = error.message; else $('#aMsg').textContent = 'Password reset link sent. Check your email.';
+}
+async function signOut() { await SBC.auth.signOut(); }
+
+
+/* ---------- helpers ---------- */
+const cut = (x, n) => String(x || '').trim().slice(0, n);
+const lines = t => String(t || '').split(/[\n,]+/).map(x => x.trim()).filter(Boolean);
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const iso = d => new Date(Date.now() - d * 864e5).toISOString();
+const median = a => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+const pctile = (a, p) => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(p * (s.length - 1)))]; };
+const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
+function fmtN(n) { n = +n || 0; if (n >= 1e7) return (n / 1e7).toFixed(1) + 'Cr'; if (n >= 1e5) return (n / 1e5).toFixed(1) + 'L'; if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K'; return String(Math.round(n)); }
+function fmtDur(s) { s = Math.round(s); const m = Math.floor(s / 60), r = s % 60; return m >= 60 ? Math.floor(m / 60) + 'h ' + (m % 60) + 'm' : m + ':' + String(r).padStart(2, '0'); }
+const cp = t => { CP.push(t); return `<button class="mini" onclick="copyText(${CP.length - 1})">Copy</button>`; };
+function copyText(i) { const t = document.createElement('textarea'); t.value = CP[i]; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); }
+const ul = a => (a && a.length) ? `<ul class="pts">${a.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
+function busy(on, msg, pct) {
+  $('#go').disabled = on; $('#bar').classList.toggle('hide', !on);
+  if (msg !== undefined) $('#msg').textContent = msg;
+  if (pct !== undefined) $('#barI').style.width = pct + '%';
+  if (on) $('#err').textContent = '';
+}
+function saveYt() { try { localStorage.setItem('mis_yt', $('#ytkey').value.trim()); } catch (e) {} $('#cfgMsg').textContent = 'Saved in this browser only.'; setTimeout(() => $('#cfgMsg').textContent = '', 2500); }
+const ytKey = () => { try { return localStorage.getItem('mis_yt') || ''; } catch (e) { return ''; } };
+function setTab(n) {
+  TAB = n; $('#t1').classList.toggle('on', n === 1); $('#t2').classList.toggle('on', n === 2);
+  $('#f1').classList.toggle('hide', n !== 1); $('#f2').classList.toggle('hide', n !== 2);
+  $('#go').textContent = n === 1 ? 'Check my topic' : 'Find trending topics';
+}
+
+/* ---------- YouTube Data API ---------- */
+async function yt(path, params, cost) {
+  const key = ytKey();
+  if (!key) throw new Error('Add your YouTube API key under "Settings" first.');
+  const r = await fetch('https://www.googleapis.com/youtube/v3/' + path + '?' + new URLSearchParams(Object.assign({}, params, { key })));
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    const m = (j.error && j.error.message) || ('YouTube error ' + r.status), reason = (((j.error || {}).errors || [])[0] || {}).reason || '';
+    if (reason === 'quotaExceeded' || reason === 'dailyLimitExceeded') throw new Error('Your free YouTube quota for today is used up. It resets daily (around 12:30 pm IST). Try again later, or use a second key.');
+    if (reason === 'keyInvalid' || /API key not valid/i.test(m)) throw new Error('YouTube says the API key is not valid. Check it in Settings.');
+    if (reason === 'accessNotConfigured' || /has not been used|is disabled/i.test(m)) throw new Error('YouTube Data API v3 is not enabled for this key\'s project. Enable it in Google Cloud, wait a minute, then retry.');
+    if (/referer|referrer/i.test(m)) throw new Error('Your key is restricted to other websites. In Google Cloud, add this site\'s address to the key\'s allowed referrers.');
+    const e = new Error(m); e.reason = reason; throw e;
+  }
+  UNITS += cost; return j;
+}
+const parseDur = isoD => { const m = String(isoD || '').match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/); return m ? (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0) : 0; };
+const fatal = e => /quota|API key|not enabled|referrer|restricted/i.test(e.message);
+
+async function resolveChannel(raw) {
+  raw = String(raw || '').trim(); if (!raw) return null;
+  let m; const params = { part: 'snippet,contentDetails,statistics' };
+  if ((m = raw.match(/youtube\.com\/channel\/(UC[\w-]{20,})/i)) || (m = raw.match(/^(UC[\w-]{20,})$/))) params.id = m[1];
+  else if ((m = raw.match(/youtube\.com\/@([\w.\-]+)/i)) || (m = raw.match(/^@([\w.\-]+)$/))) params.forHandle = '@' + m[1];
+  else {
+    const s = await yt('search', { part: 'snippet', type: 'channel', q: raw, maxResults: 1 }, 100);
+    const it = (s.items || [])[0]; if (!it) return null;
+    params.id = (it.snippet && it.snippet.channelId) || (it.id && it.id.channelId);
+  }
+  const j = await yt('channels', params, 1), c = (j.items || [])[0];
+  if (!c) return null;
+  const st = c.statistics || {};
+  return { id: c.id, title: c.snippet.title, uploads: c.contentDetails.relatedPlaylists.uploads, subs: st.hiddenSubscriberCount ? 0 : +st.subscriberCount || 0, hidden: !!st.hiddenSubscriberCount, videoCount: +st.videoCount || 0 };
+}
+function mapVideo(v, src) {
+  const dur = parseDur(v.contentDetails && v.contentDetails.duration), st = v.statistics || {};
+  return { id: v.id, title: v.snippet.title, channelId: v.snippet.channelId, channel: v.snippet.channelTitle, publishedAt: v.snippet.publishedAt, views: +st.viewCount || 0, likes: +st.likeCount || 0, comments: +st.commentCount || 0, dur, short: dur > 0 && dur <= 180, tags: (v.snippet.tags || []).slice(0, 8), desc: cut(String(v.snippet.description || '').replace(/\s+/g, ' '), 500), cat: v.snippet.categoryId || '', src };
+}
+async function fetchVideos(ids, prog, start, span) {
+  const out = [];
+  for (let i = 0; i < ids.length; i += 50) {
+    prog('Fetching video statistics…', start + Math.round(i / Math.max(ids.length, 1) * span));
+    const j = await yt('videos', { part: 'snippet,statistics,contentDetails', id: ids.slice(i, i + 50).join(',') }, 1);
+    (j.items || []).forEach(v => out.push(v));
+  }
+  return out;
+}
+async function fetchChannels(ids, prog, start) {
+  const chans = {};
+  for (let i = 0; i < ids.length; i += 50) {
+    prog('Fetching channel sizes…', start);
+    const j = await yt('channels', { part: 'snippet,statistics', id: ids.slice(i, i + 50).join(',') }, 1);
+    (j.items || []).forEach(c => { const st = c.statistics || {}; chans[c.id] = { id: c.id, title: c.snippet.title, subs: st.hiddenSubscriberCount ? 0 : +st.subscriberCount || 0, hidden: !!st.hiddenSubscriberCount, videoCount: +st.videoCount || 0 }; });
+  }
+  return chans;
+}
+
+/* ---------- metrics ---------- */
+const STOP = new Set(('the a an and or of to in on for with is are was be it this that these those you your we our i my me how what why when who which from by at as not no yes do does did can will just about into over than then so if but all any more most new best top vs via ' +
+  'ka ki ke hai hain kya se me mein ko aur ye wo to hi ho nahi nhi kaise kab kyu kyun liye mat sabse bhi ek par pe tak video videos part full hindi english official live shorts short ' + new Date().getFullYear() + ' ' + (new Date().getFullYear() - 1)).split(' '));
+function tokens(t) { return (String(t).toLowerCase().match(/[\p{L}\p{M}\p{N}]+/gu) || []).filter(w => w.length >= 3 && !STOP.has(w) && !/^\d+$/.test(w)); }
+function enrich(videos, chans) {
+  const byCh = {}; videos.forEach(v => (byCh[v.channelId] = byCh[v.channelId] || []).push(v.views));
+  videos.forEach(v => {
+    const ch = chans[v.channelId] || {}, age = Math.max((Date.now() - new Date(v.publishedAt)) / 864e5, 0.5);
+    v.age = age; v.vpd = v.views / age; v.eng = v.views ? (v.likes + v.comments) / v.views * 100 : 0; v.subs = ch.subs || 0;
+    v.out = v.subs ? v.views / Math.max(v.subs, 1000) : null;
+  });
+  return videos;
+}
+function heatOf(V, n) {
+  const terms = {};
+  V.forEach(v => { const t = tokens(v.title), set = new Set(t); for (let i = 0; i < t.length - 1; i++) set.add(t[i] + ' ' + t[i + 1]); set.forEach(k => { const o = terms[k] || (terms[k] = { k, n: 0, vpd: 0, small: 0, known: 0 }); o.n++; o.vpd += v.vpd; if (v.subs) { o.known++; if (v.subs < 100000) o.small++; } }); });
+  return Object.values(terms).filter(o => o.n >= 2).map(o => ({ k: o.k, n: o.n, avgVpd: o.vpd / o.n, smallPct: o.known ? Math.round(o.small / o.known * 100) : null, heat: (o.vpd / o.n) * Math.log(1 + o.n) })).sort((a, b) => b.heat - a.heat).slice(0, n || 15);
+}
+
+/* ====== FEATURE 1: will this topic work? ====== */
+function judge(V, mySubs, myId) {
+  const J = {}, top = [...V].sort((a, b) => b.views - a.views).slice(0, 25);
+  J.n = V.length; J.topViews = top[0] ? top[0].views : 0; J.medTop = median(top.map(v => v.views));
+  J.demand = Math.round(100 * clamp((Math.log10(Math.max(J.medTop, 1)) - 3) / 2.5, 0, 1));
+  const known = top.filter(v => v.subs > 0), small = known.length ? known.filter(v => v.subs < 100000).length / known.length : 0;
+  const withS = V.filter(v => v.subs > 0), outl = withS.length ? withS.filter(v => v.out >= 3).length / withS.length : 0;
+  J.small = small; J.outl = outl; J.opportunity = Math.round(100 * (0.5 * small + 0.5 * Math.min(outl * 2.5, 1)));
+  const big = known.length ? known.filter(v => v.subs >= 1e6).length / known.length : 0, byCh = {};
+  top.forEach(v => byCh[v.channelId] = (byCh[v.channelId] || 0) + v.views);
+  const tot = Object.values(byCh).reduce((a, b) => a + b, 0) || 1, top3 = Object.values(byCh).sort((a, b) => b - a).slice(0, 3).reduce((a, b) => a + b, 0) / tot;
+  J.big = big; J.top3 = top3; J.competition = Math.round(100 * (0.5 * big + 0.5 * top3));
+  const fresh = V.filter(v => v.age <= 30), older = V.filter(v => v.age > 30); J.fresh = fresh.length;
+  J.momentum = 'unclear'; J.ratio = null;
+  if (fresh.length >= 3 && older.length >= 3) { J.ratio = median(fresh.map(v => v.vpd)) / Math.max(median(older.map(v => v.vpd)), 1); J.momentum = J.ratio > 1.2 ? 'rising' : J.ratio < 0.6 ? 'cooling' : 'steady'; }
+  let score = 0.4 * J.demand + 0.35 * J.opportunity + 0.25 * (100 - J.competition);
+  if (J.momentum === 'rising') score += 5; if (J.momentum === 'cooling') score -= 8;
+  J.score = Math.round(clamp(score, 0, 100));
+  J.label = J.score >= 68 ? 'Strong: worth making' : J.score >= 50 ? 'Promising: needs a sharp angle' : J.score >= 35 ? 'Crowded or low demand: reframe it' : 'Weak: skip it or change the topic';
+  J.cls = J.score >= 68 ? 'vs-good' : J.score >= 50 ? 'vs-ok' : 'vs-bad';
+  J.reasons = [
+    'Demand: the 25 most-viewed videos in this period have a typical (median) ' + fmtN(J.medTop) + ' views, and the best has ' + fmtN(J.topViews) + '.',
+    'Room for newcomers: ' + Math.round(small * 100) + '% of those top videos come from channels under 1 lakh subscribers, and ' + Math.round(outl * 100) + '% of all videos got at least 3x more views than their channel has subscribers.',
+    'Competition: ' + Math.round(big * 100) + '% of the top videos come from channels above 10 lakh subscribers, and the 3 biggest channels hold ' + Math.round(top3 * 100) + '% of the top views.',
+    J.ratio != null ? 'Momentum is ' + J.momentum + ': videos from the last 30 days get ' + J.ratio.toFixed(1) + 'x the daily views of older ones.' : 'Momentum is unclear: too few recent or older videos to compare.'
+  ];
+  J.peers = null;
+  if (mySubs > 0) {
+    const peers = V.filter(v => v.subs >= mySubs / 3 && v.subs <= mySubs * 3 && v.channelId !== myId);
+    if (peers.length >= 3) J.peers = { n: peers.length, med: median(peers.map(v => v.views)), p25: pctile(peers.map(v => v.views), 0.25), p75: pctile(peers.map(v => v.views), 0.75), subs: mySubs };
+  }
+  return J;
+}
+async function collectValidate(inp, prog) {
+  UNITS = 0; const days = +inp.window || 90, lang = /hindi|hinglish/i.test(inp.language) ? 'hi' : 'en', hi = lang === 'hi', t = inp.topic;
+  const plan = [{ q: t, order: 'viewCount', days }, { q: t, order: 'date', days: 30 }, { q: t + ' ' + (hi ? 'kaise' : 'explained'), order: 'viewCount', days }, { q: t + ' ' + (hi ? 'in hindi' : 'for beginners'), order: 'viewCount', days }];
+  const src = new Map();
+  for (let i = 0; i < plan.length; i++) {
+    prog('Searching YouTube: "' + plan[i].q + '"' + (plan[i].order === 'date' ? ' (newest)' : ''), 6 + i * 10);
+    const p = { part: 'snippet', type: 'video', q: plan[i].q, maxResults: 25, order: plan[i].order, publishedAfter: iso(plan[i].days), relevanceLanguage: lang };
+    if (inp.region) p.regionCode = inp.region;
+    const j = await yt('search', p, 100);
+    (j.items || []).forEach(it => { const id = it.id && it.id.videoId; if (id && !src.has(id)) src.set(id, plan[i].order === 'date' ? 'new' : 'top'); });
+  }
+  let mine = null;
+  if (inp.channel) { prog('Reading your channel…', 46); try { mine = await resolveChannel(inp.channel); } catch (e) { if (fatal(e)) throw e; } }
+  const raw = await fetchVideos([...src.keys()], prog, 50, 20);
+  const videos = raw.map(v => mapVideo(v, src.get(v.id))).filter(v => v.views > 0);
+  const channels = await fetchChannels([...new Set(videos.map(v => v.channelId))], prog, 76);
+  if (mine) channels[mine.id] = Object.assign(channels[mine.id] || {}, { id: mine.id, title: mine.title, subs: mine.subs, mine: true });
+  return { videos, channels, mineId: mine ? mine.id : null };
+}
+function vidsPack(n) { return JSON.stringify([...Y.videos].sort((a, b) => b.views - a.views).slice(0, n).map(v => ({ id: v.id, title: v.title, channel: v.channel, subscribers: v.subs || 'hidden', views: v.views, views_per_day: Math.round(v.vpd), minutes: +(v.dur / 60).toFixed(1), age_days: Math.round(v.age), tags: v.tags.slice(0, 5), description: v.desc.slice(0, 300) }))); }
+const SUM_SHAPE = '{"summaries":[{"id":"video id from the data","summary":"2 sentences on what the video covers, based ONLY on its title, description and tags","angle":"how it is framed, e.g. fear, proof, roadmap, comparison, story","why_it_worked":"one sentence using the numbers"}]}';
+const VERD_SHAPE = '{"will_it_work":"yes|maybe|no","verdict_explained":"3-4 plain sentences a non-expert understands, using the numbers","what_viewers_want":["4 things viewers seem to want, from titles and descriptions"],"best_angles":[{"angle":"","why":"","example_title":""}] (exactly 5, different from what is already out there),"avoid":["3 things not to do"],"title_ideas":[""] (6 original titles),"format_advice":"short vs long, ideal length, how to open"}';
+const vCtx = () => 'Topic: ' + Y.topic + '\nOur channel and audience: ' + (Y.inputs.brand || 'not given') + (Y.J.peers ? '\nChannels our size (' + fmtN(Y.J.peers.subs) + ' subscribers) get about ' + fmtN(Y.J.peers.med) + ' views on this topic.' : '') + '\nWrite in: ' + (Y.inputs.language || 'English') +
+  '\nOur computed verdict: ' + JSON.stringify({ score: Y.J.score, label: Y.J.label, demand: Y.J.demand, opportunity: Y.J.opportunity, competition: Y.J.competition, momentum: Y.J.momentum, reasons: Y.J.reasons });
+async function genValidate() {
+  const c = cfg(); if (!c.key) { $('#set').open = true; $('#aerr').textContent = 'Add your AI key under Settings, or use the copy-prompt button.'; return; }
+  $('#aibtn').disabled = true; $('#aerr').textContent = '';
+  try {
+    $('#amsg').textContent = 'Summarising the top videos…';
+    const S = await ai(vCtx() + '\n\nVideos (real data):\n' + vidsPack(20) + '\n\nTask: summarise each video. Return JSON: ' + SUM_SHAPE, false, 6000);
+    $('#amsg').textContent = 'Judging the opportunity…';
+    const V = await ai(vCtx() + '\n\nTop videos (real data):\n' + vidsPack(15) + '\n\nTask: explain whether this topic will work for us and how to win with it. Return JSON: ' + VERD_SHAPE, false, 5000);
+    Y.ai = Object.assign({}, Y.ai, S, V); await saveAi(); render();
+  } catch (e) { $('#aerr').textContent = e.message; $('#aibtn').disabled = false; $('#amsg').textContent = ''; }
+}
+const validatePrompt = () => SYS + '\n\n' + vCtx() + '\n\nVideos (real data):\n' + vidsPack(20) + '\n\nTASK: (1) summarise each video based ONLY on its title, description and tags, (2) explain whether this topic will work for us and how to win. Return ONE JSON object merging both shapes.\nShape 1: ' + SUM_SHAPE + '\nShape 2: ' + VERD_SHAPE;
+
+function vcard(v, sm) {
+  const s = sm && sm[v.id];
+  return `<div class="vc"><a href="https://youtu.be/${esc(v.id)}" target="_blank"><img loading="lazy" src="https://i.ytimg.com/vi/${esc(v.id)}/mqdefault.jpg" alt=""></a><div>
+    <h5><a href="https://youtu.be/${esc(v.id)}" target="_blank">${esc(v.title)}</a></h5>
+    <div class="chips"><span class="chip"><b>${esc(v.channel)}</b>${v.subs ? ' · ' + fmtN(v.subs) + ' subs' : ''}</span><span class="chip"><b>${fmtN(v.views)}</b> views</span><span class="chip"><b>${fmtN(v.vpd)}</b>/day</span>${v.out != null ? `<span class="chip"><b>${v.out.toFixed(1)}x</b> its subs</span>` : ''}<span class="chip">${fmtDur(v.dur)}${v.short ? ' Short' : ''}</span><span class="chip">${Math.round(v.age)}d ago</span></div>
+    ${s ? `<p><b>Summary:</b> ${esc(s.summary)}</p><p class="cc"><b>Angle:</b> ${esc(s.angle)} · <b>Why it worked:</b> ${esc(s.why_it_worked)}</p>` : `<p class="cc"><b>From its description:</b> ${esc(v.desc.slice(0, 220) || 'No description.')}${v.desc.length > 220 ? '…' : ''}</p>`}</div></div>`;
+}
+const meter = (l, v, bad) => `<div class="brow"><span class="bl">${l}</span><span class="bt"><i class="${bad ? 'r' : ''}" style="width:${v}%"></i></span><span class="bv">${v}/100</span></div>`;
+function renderValidate() {
+  const J = Y.J, A = Y.ai || {}, sm = {}; (A.summaries || []).forEach(x => sm[x.id] = x);
+  let h = `<section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${esc(Y.topic)} <span class="tag">${esc(Y.id)}</span></h2><button class="mini" onclick="delRun()">Delete run</button></div>
+    <div class="verdict" style="margin-top:14px"><div class="vscore ${J.cls}">${J.score}</div><div class="meters"><h3 style="margin:0 0 6px;font-size:19px">${esc(J.label)}</h3>${meter('Demand', J.demand)}${meter('Room for newcomers', J.opportunity)}${meter('Competition (lower is better)', J.competition, true)}</div></div>
+    <div class="kpis"><div class="kpi"><b>${J.n}</b><span>Videos checked</span></div><div class="kpi"><b>${fmtN(J.medTop)}</b><span>Typical views, top 25</span></div><div class="kpi"><b>${fmtN(J.topViews)}</b><span>Best video views</span></div><div class="kpi"><b>${esc(J.momentum)}</b><span>Momentum</span></div></div>
+    ${ul(J.reasons)}`;
+  if (J.peers) h += `<div class="hint"><b>At your size:</b> channels with about ${fmtN(J.peers.subs / 3)} to ${fmtN(J.peers.subs * 3)} subscribers got a typical <b>${fmtN(J.peers.med)} views</b> on this topic (middle range ${fmtN(J.peers.p25)} to ${fmtN(J.peers.p75)}), from ${J.peers.n} videos.</div>`;
+  else if (Y.inputs.channel) h += `<div class="hint">Not enough channels of your size in the results to estimate your reach.</div>`;
+  h += `<details><summary>How is this decided?</summary><p class="cc">Score = 40% demand + 35% room for newcomers + 25% low competition, nudged up if recent videos are gaining faster than older ones and down if they are cooling. Demand uses the median views of the top 25 videos. Room for newcomers uses how many top videos come from small channels and how many videos beat their channel's size. It is a guide built from public numbers, not a prediction.</p></details></section>`;
+
+  h += `<section class="card"><h2>Will it work, and how to win</h2>`;
+  if (A.verdict_explained) {
+    h += `<p><span class="tag ${A.will_it_work === 'yes' ? 'good' : A.will_it_work === 'no' ? 'high' : 'medium'}">${esc(A.will_it_work)}</span> ${esc(A.verdict_explained)}</p>
+      <div class="cols"><div><h4>What viewers want</h4>${ul(A.what_viewers_want)}<h4>Avoid</h4>${ul(A.avoid)}</div><div><h4>Title ideas</h4>${(A.title_ideas || []).map(t => `<div class="item"><p>${esc(t)}</p>${cp(t)}</div>`).join('')}</div></div>
+      <h4>Best angles to enter with</h4><div class="cgrid">${(A.best_angles || []).map(a => `<div class="cpt"><b>${esc(a.angle)}</b><p>${esc(a.why)}</p><p class="cc">e.g. ${esc(a.example_title)}</p></div>`).join('')}</div>
+      <div class="hint"><b>Format:</b> ${esc(A.format_advice)}</div><p><button class="mini" onclick="showPrompt()">Redo with my own AI chat</button></p>`;
+  } else {
+    const man = cfg().mode === 'manual';
+    h += `<p class="sub">Get a plain-language verdict, the best angles to enter with, title ideas, and a summary of each video below.</p><p><button class="btn" id="aibtn" onclick="${man ? 'showPrompt()' : 'genValidate()'}">${man ? 'Create the prompt for my AI chat' : 'Explain and summarise with AI'}</button> ${man ? '' : '<button class="mini" onclick="showPrompt()">Use my own AI chat instead</button>'}</p><div class="msg" id="amsg"></div><div class="err" id="aerr"></div>`;
+  }
+  h += `</section>`;
+  const vids = [...Y.videos].sort((a, b) => b.views - a.views).slice(0, 30);
+  h += `<section class="card"><h2>Videos already on this topic</h2><p class="sub">Top ${vids.length} by views. ${A.summaries ? 'Summaries are written from each video\'s title, description and tags.' : 'Descriptions shown. Run the AI step for proper summaries.'}</p>${vids.map(v => vcard(v, sm)).join('')}</section>`;
+  $('#out').innerHTML = h;
+}
+
+/* ====== FEATURE 2: trending topics for my channel / domain ====== */
+function profileOf(vs, ch) {
+  if (!vs.length) return null;
+  const med = median(vs.map(v => v.views)), best = [...vs].sort((a, b) => b.views - a.views).slice(0, 3);
+  const dates = vs.map(v => +new Date(v.publishedAt)), span = Math.max((Math.max(...dates) - Math.min(...dates)) / 864e5, 1);
+  return { name: ch.title, subs: ch.subs, hidden: ch.hidden, n: vs.length, med, best, shortPct: Math.round(vs.filter(v => v.short).length / vs.length * 100), perMonth: +(vs.length / span * 30).toFixed(1), themes: heatOf(vs, 6).map(h => h.k) };
+}
+async function collectTrends(inp, prog) {
+  UNITS = 0; const days = +inp.window || 14, lang = /hindi|hinglish/i.test(inp.language) ? 'hi' : 'en';
+  let mine = null, myRaw = [];
+  if (inp.channel) {
+    prog('Reading your channel…', 4);
+    mine = await resolveChannel(inp.channel);
+    if (!mine) throw new Error('Could not find your channel. Try the @handle or the full channel link.');
+    const pl = await yt('playlistItems', { part: 'contentDetails', playlistId: mine.uploads, maxResults: 50 }, 1);
+    myRaw = await fetchVideos((pl.items || []).map(it => it.contentDetails && it.contentDetails.videoId).filter(Boolean), prog, 8, 8);
+  }
+  let domains = inp.domains.slice(0, 3);
+  const myVideos = myRaw.map(v => mapVideo(v, 'mine')).filter(v => v.views > 0);
+  if (!domains.length && myVideos.length) {
+    const tmp = enrich(myVideos.map(v => Object.assign({}, v)), { [mine.id]: { subs: mine.subs } });
+    domains = heatOf(tmp, 12).filter(h => h.k.includes(' ')).slice(0, 2).map(h => h.k);
+    if (!domains.length) domains = heatOf(tmp, 3).slice(0, 2).map(h => h.k);
+  }
+  const src = new Map(), pre = [];
+  const region = inp.region || 'US';
+  for (const [i, cat] of [27, 28, 25].entries()) {
+    prog('Reading what is trending in your region…', 18 + i * 3);
+    try { const j = await yt('videos', { part: 'snippet,statistics,contentDetails', chart: 'mostPopular', regionCode: region, videoCategoryId: cat, maxResults: 50 }, 1); (j.items || []).forEach(v => { if (!src.has(v.id)) { src.set(v.id, 'chart'); pre.push(v); } }); }
+    catch (e) { if (fatal(e)) throw e; }
+  }
+  for (let i = 0; i < domains.length; i++) {
+    prog('Searching trending videos: "' + domains[i] + '"', 30 + i * 12);
+    const p = { part: 'snippet', type: 'video', q: domains[i], maxResults: 25, order: 'viewCount', publishedAfter: iso(days), relevanceLanguage: lang };
+    if (inp.region) p.regionCode = inp.region;
+    const j = await yt('search', p, 100);
+    (j.items || []).forEach(it => { const id = it.id && it.id.videoId; if (id && !src.has(id)) src.set(id, 'domain: ' + domains[i]); });
+  }
+  const need = [...src.keys()].filter(id => !pre.some(v => v.id === id));
+  const more = await fetchVideos(need, prog, 66, 8);
+  const all = pre.concat(more).map(v => mapVideo(v, src.get(v.id))).filter(v => v.views > 0);
+  const channels = await fetchChannels([...new Set(all.map(v => v.channelId).concat(myVideos.length ? [mine.id] : []))], prog, 78);
+  if (mine) channels[mine.id] = Object.assign(channels[mine.id] || {}, { id: mine.id, title: mine.title, subs: mine.subs, hidden: mine.hidden, mine: true });
+  const videos = all.concat(myVideos.map(v => Object.assign(v, { mine: true })));
+  return { videos, channels, domains, mineId: mine ? mine.id : null };
+}
+function trendView() {
+  const V = Y.videos.filter(v => !v.mine), M = Y.videos.filter(v => v.mine), mineCh = Object.values(Y.channels).find(c => c.mine);
+  const days = +Y.inputs.window || 14, mySubs = mineCh ? mineCh.subs : 0;
+  const recent = V.filter(v => v.src === 'chart' ? v.age <= 45 : true);
+  Y.prof = M.length ? profileOf(M, mineCh || {}) : null;
+  Y.heat = heatOf(recent, 15);
+  const cap = Math.max(100000, mySubs * 5);
+  Y.win = recent.filter(v => v.subs > 0 && v.subs <= cap && v.out >= 2 && v.age <= Math.max(days, 30)).sort((a, b) => b.out - a.out).slice(0, 12);
+  Y.trend = [...recent].sort((a, b) => b.vpd - a.vpd).slice(0, 20);
+}
+const cmp = v => ({ title: v.title, channel: v.channel, subscribers: v.subs || 'hidden', views: v.views, views_per_day: Math.round(v.vpd), x_subscribers: v.out ? +v.out.toFixed(1) : null, age_days: Math.round(v.age), minutes: +(v.dur / 60).toFixed(1), source: v.src });
+function trendPack() {
+  const p = Y.prof;
+  return JSON.stringify({ region: Y.inputs.region || 'worldwide', window_days: Y.inputs.window, domains: Y.inputs.domainsUsed || [], destination_for_viewers: Y.inputs.dest || 'not given',
+    my_channel: p ? { name: p.name, subscribers: p.subs || 'hidden', typical_views: Math.round(p.med), shorts_pct: p.shortPct, posts_per_month: p.perMonth, top_themes: p.themes, best_videos: p.best.map(v => ({ title: v.title, views: v.views })) } : null,
+    trending_keywords: Y.heat.slice(0, 15).map(h => ({ keyword: h.k, videos: h.n, avg_views_per_day: Math.round(h.avgVpd), pct_from_small_channels: h.smallPct })),
+    trending_videos: Y.trend.slice(0, 30).map(cmp), small_channels_winning: Y.win.map(cmp) });
+}
+const TREND_SHAPE = '{"channel_read":{"what_works":"what already works for this channel","audience_guess":"who watches, from the data","gap":"what the channel is missing that trends reward"} or null if no channel given,"trending_topics":[{"topic":"","why_trending":"cite numbers from the data","fit_for_channel":"high|medium|low","traffic_potential":"high|medium|low","how_winnable":"are small channels winning here? cite the data","act_within":"estimated days before it cools (flag as an estimate)","evidence":["video titles from the data"]}] (exactly 10, ranked best first)}';
+const PLAY_SHAPE = '{"playbooks":[{"topic":"one of the trending topics above","how_to_portray":"the angle and positioning to show the audience, 2-3 sentences","title_options":["","",""],"hook_first_30s":"the exact opening line or visual","thumbnail":"concept in one sentence","format":"short|long","outline":["5 beats"],"traffic_pull":{"in_video_cta":"what to say and when to ask viewers to subscribe or click","description_and_pinned_comment":"what to put there","shorts_to_long_funnel":"how a Short can send viewers to the long video","playlist_and_end_screen":"what to link","community_and_off_platform":"how to send viewers to the destination, community post, or other places"},"follow_up_videos":["3 titles"]}] (the 5 best topics)}';
+const tCtx = () => 'Our channel and audience: ' + (Y.inputs.brand || 'not given') + '\nWrite in: ' + (Y.inputs.language || 'English') + '\n\nREAL YOUTUBE DATA:\n' + trendPack();
+async function genTrends() {
+  const c = cfg(); if (!c.key) { $('#set').open = true; $('#aerr').textContent = 'Add your AI key under Settings, or use the copy-prompt button.'; return; }
+  $('#aibtn').disabled = true; $('#aerr').textContent = '';
+  try {
+    $('#amsg').textContent = 'Reading the trends…';
+    const A = await ai(tCtx() + '\n\nTask: find the trending topics that fit this channel best and can bring subscribers and views. Use only the data. Return JSON: ' + TREND_SHAPE, false, 6000);
+    $('#amsg').textContent = 'Writing the playbooks…';
+    const B = await ai(tCtx() + '\n\nTrending topics found: ' + JSON.stringify(A.trending_topics) + '\n\nTask: write a playbook for the 5 best topics: how to present the topic to the audience and how to pull traffic. Return JSON: ' + PLAY_SHAPE, false, 8000);
+    Y.ai = Object.assign({}, Y.ai, A, B); await saveAi(); render();
+  } catch (e) { $('#aerr').textContent = e.message; $('#aibtn').disabled = false; $('#amsg').textContent = ''; }
+}
+const trendsPrompt = () => SYS + '\n\n' + tCtx() + '\n\nTASK: (1) find the trending topics that fit this channel best and can bring subscribers and views, (2) write a playbook for the 5 best topics: how to present each to the audience and how to pull traffic. Return ONE JSON object merging both shapes.\nShape 1: ' + TREND_SHAPE + '\nShape 2: ' + PLAY_SHAPE;
+function renderTrends() {
+  const A = Y.ai || {}, p = Y.prof, bars = items => { const mx = Math.max(...items.map(i => i.v), 1); return items.map(i => `<div class="brow"><span class="bl" title="${esc(i.l)}">${esc(i.l)}</span><span class="bt"><i style="width:${(i.v / mx * 100).toFixed(1)}%"></i></span><span class="bv">${esc(i.t)}</span></div>`).join(''); };
+  const tg = (v, good) => v === good ? 'good' : v === 'medium' ? 'medium' : 'high';
+  let h = `<section class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Trending topics <span class="tag">${esc(Y.id)}</span></h2><button class="mini" onclick="delRun()">Delete run</button></div>
+    <p class="sub">${(Y.inputs.domainsUsed || []).length ? 'Domains watched: ' + esc(Y.inputs.domainsUsed.join(', ')) + '. ' : ''}Plus what is trending in ${esc(Y.inputs.region || 'the world')} for Education, Science and Technology, and News.</p>`;
+  if (p) h += `<div class="kpis"><div class="kpi"><b>${p.hidden ? 'Hidden' : fmtN(p.subs)}</b><span>${esc(p.name)} subscribers</span></div><div class="kpi"><b>${fmtN(p.med)}</b><span>Your typical views</span></div><div class="kpi"><b>${p.perMonth}</b><span>Posts a month</span></div><div class="kpi"><b>${p.shortPct}%</b><span>Are Shorts</span></div></div><p class="cc">Your themes: ${esc(p.themes.join(', '))}. Best video: ${esc(p.best[0].title)} (${fmtN(p.best[0].views)} views).</p>`;
+  h += `</section>`;
+
+  h += `<section class="card"><h2>Trending topics for you</h2>`;
+  if (A.trending_topics) {
+    if (A.channel_read) h += `<div class="cols"><div class="dsec"><h4>What works for you</h4><p>${esc(A.channel_read.what_works)}</p></div><div class="dsec"><h4>Who watches</h4><p>${esc(A.channel_read.audience_guess)}</p></div></div><div class="hint"><b>Gap:</b> ${esc(A.channel_read.gap)}</div>`;
+    h += `<div class="cgrid">${A.trending_topics.map((t, i) => `<div class="cpt"><b>${i + 1}. ${esc(t.topic)}</b><p><span class="tag ${tg(t.fit_for_channel, 'high')}">${esc(t.fit_for_channel)} fit</span> <span class="tag ${tg(t.traffic_potential, 'high')}">${esc(t.traffic_potential)} traffic</span></p><p>${esc(t.why_trending)}</p><p><b>Winnable?</b> ${esc(t.how_winnable)}</p><p class="cc">Act within (estimate): ${esc(t.act_within)}</p><p class="cc">${esc((t.evidence || []).join(' · '))}</p></div>`).join('')}</div>`;
+    h += `<p><button class="mini" onclick="showPrompt()">Redo with my own AI chat</button></p>`;
+  } else {
+    const man = cfg().mode === 'manual';
+    h += `<p class="sub">Turn the data below into ranked topics for your channel, with a playbook for each: how to present it and how to pull traffic.</p><p><button class="btn" id="aibtn" onclick="${man ? 'showPrompt()' : 'genTrends()'}">${man ? 'Create the prompt for my AI chat' : 'Pick topics and write playbooks'}</button> ${man ? '' : '<button class="mini" onclick="showPrompt()">Use my own AI chat instead</button>'}</p><div class="msg" id="amsg"></div><div class="err" id="aerr"></div>`;
+  }
+  h += `</section>`;
+
+  if (A.playbooks) {
+    h += `<section class="card"><h2>Playbooks: how to present each topic and pull traffic</h2>${A.playbooks.map(b => { const t = b.traffic_pull || {}; return `<div class="pb"><div class="row" style="justify-content:space-between"><h3 style="margin:0;font-size:17px">${esc(b.topic)}</h3><span class="tag">${esc(b.format)}</span></div>
+      <h4>How to portray it</h4><p>${esc(b.how_to_portray)}</p>
+      <h4>Title options</h4>${(b.title_options || []).map(x => `<div class="item"><p>${esc(x)}</p>${cp(x)}</div>`).join('')}
+      <p><b>Hook:</b> ${esc(b.hook_first_30s)}</p><p><b>Thumbnail:</b> ${esc(b.thumbnail)}</p><h4>Outline</h4>${ul(b.outline)}
+      <h4>How to pull traffic</h4><div class="cols"><div class="dsec"><h4>In the video</h4><p>${esc(t.in_video_cta)}</p></div><div class="dsec"><h4>Description and pinned comment</h4><p>${esc(t.description_and_pinned_comment)}</p></div><div class="dsec"><h4>Shorts to long video</h4><p>${esc(t.shorts_to_long_funnel)}</p></div><div class="dsec"><h4>Playlist and end screen</h4><p>${esc(t.playlist_and_end_screen)}</p></div></div>
+      <div class="dsec" style="border-color:var(--acc)"><h4>Community and off-YouTube</h4><p>${esc(t.community_and_off_platform)}</p></div>
+      ${(b.follow_up_videos || []).length ? `<h4>Follow-up videos</h4>${ul(b.follow_up_videos)}` : ''}</div>`; }).join('')}</section>`;
+  }
+
+  h += `<section class="card"><h2>What is heating up</h2><p class="sub">Keywords in recently trending videos, ranked by how fast those videos gain views. The percentage shows how many come from small channels (under 1 lakh subscribers).</p>${bars(Y.heat.map(x => ({ l: x.k, v: x.heat, t: fmtN(x.avgVpd) + '/day' + (x.smallPct != null ? ' · ' + x.smallPct + '% small' : '') })))}</section>`;
+  if (Y.win.length) h += `<section class="card"><h2>Small channels are winning here</h2><p class="sub">Recent videos that got far more views than their channel has subscribers. These are topics you can realistically win.</p>${Y.win.map(v => vcard(v)).join('')}</section>`;
+  h += `<section class="card"><h2>Fastest-growing videos right now</h2>${Y.trend.map(v => vcard(v)).join('')}</section>`;
+  $('#out').innerHTML = h;
+}
+
+/* ---------- manual prompt + import ---------- */
+function showPrompt() {
+  const pr = Y.inputs.mode === 'trends' ? trendsPrompt() : validatePrompt();
+  $('#manual').innerHTML = `<section class="card"><h2>Use your own AI chat</h2><p class="sub">Copy the prompt into Claude, ChatGPT or Gemini, then paste the full answer back. No web search needed: the real data is inside the prompt.</p>
+    <textarea id="mp" readonly style="min-height:100px;font-size:12px">${esc(pr)}</textarea><p><button class="btn" onclick="$('#mp').select();document.execCommand('copy')">Copy prompt</button></p>
+    <label>Paste the AI's answer here</label><textarea id="mr" style="min-height:130px" placeholder="{ ... }"></textarea><p><button class="btn" onclick="importAi()">Import result</button></p><div class="err" id="mErr"></div></section>`;
+  $('#manual').scrollIntoView({ behavior: 'smooth' });
+}
+async function importAi() {
+  try {
+    const j = parseJson($('#mr').value);
+    if (Y.inputs.mode === 'trends' ? !j.trending_topics : !(j.verdict_explained || j.summaries)) throw new Error('The result does not have the expected content. Ask the AI to re-send the complete JSON.');
+    Y.ai = Object.assign({}, Y.ai, j); await saveAi(); $('#manual').innerHTML = ''; render();
+  } catch (e) { $('#mErr').textContent = e.message; }
+}
+
+/* ---------- storage ---------- */
+const newId = () => 'Y' + new Date().toISOString().replace(/[-:T]/g, '').slice(2, 12) + Math.random().toString(36).slice(2, 5);
+async function saveRun() {
+  const { data } = await SBC.auth.getSession();
+  const { error } = await SBC.from('yt_runs').upsert({ id: Y.id, user_id: data.session.user.id, topic: Y.topic, inputs: Y.inputs, videos: Y.videos, channels: Y.channels, ai: Y.ai || {} });
+  if (error) throw new Error(error.message);
+}
+async function saveAi() { const { error } = await SBC.from('yt_runs').update({ ai: Y.ai }).eq('id', Y.id); if (error) throw new Error(error.message); }
+async function loadHist() {
+  try {
+    const { data, error } = await SBC.from('yt_runs').select('id,topic,inputs,created_at').order('created_at', { ascending: false }).limit(40);
+    if (error) throw error;
+    $('#hist').innerHTML = data.length ? data.map(r => `<button onclick="openRun('${r.id}')"><b>${esc(r.topic)}</b><small>${r.inputs && r.inputs.mode === 'trends' ? 'Trending' : 'Topic check'} · ${esc(new Date(r.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }))}</small></button>`).join('') : '<small>No runs yet</small>';
+  } catch (e) { $('#hist').innerHTML = '<small>' + esc(e.message || 'Run the database script in Supabase first') + '</small>'; }
+}
+function prepare() {
+  enrich(Y.videos, Y.channels);
+  if (Y.inputs.mode === 'trends') trendView();
+  else { const mineCh = Object.values(Y.channels).find(c => c.mine); Y.J = judge(Y.videos, mineCh ? mineCh.subs : 0, mineCh ? mineCh.id : null); }
+}
+async function openRun(id) {
+  busy(true, 'Opening…', 30);
+  try {
+    const { data, error } = await SBC.from('yt_runs').select('*').eq('id', id).single(); if (error) throw error;
+    Y = { id: data.id, topic: data.topic, inputs: data.inputs || {}, videos: data.videos || [], channels: data.channels || {}, ai: data.ai || {} };
+    setTab(Y.inputs.mode === 'trends' ? 2 : 1); prepare(); $('#manual').innerHTML = ''; render(); busy(false, '');
+  } catch (e) { busy(false, ''); $('#err').textContent = e.message || e; }
+}
+async function delRun() { if (!confirm('Delete this run permanently?')) return; await SBC.from('yt_runs').delete().eq('id', Y.id); Y = null; $('#out').innerHTML = ''; loadHist(); }
+function render() { CP = []; Y.inputs.mode === 'trends' ? renderTrends() : renderValidate(); }
+
+/* ---------- main flow ---------- */
+async function go() {
+  if (!ytKey()) { $('#set').open = true; $('#err').textContent = 'Add your YouTube API key under Settings first.'; return; }
+  const shared = { brand: cut($('#brand').value, 1500), region: $('#region').value, language: $('#language').value };
+  let inp;
+  if (TAB === 1) {
+    inp = Object.assign({ mode: 'validate', topic: cut($('#topic').value, 120), channel: cut($('#ch1').value, 200), window: $('#w1').value }, shared);
+    if (!inp.topic) { $('#err').textContent = 'Enter a topic.'; return; }
+  } else {
+    inp = Object.assign({ mode: 'trends', channel: cut($('#ch2').value, 200), domains: lines($('#domains').value).slice(0, 3), dest: cut($('#dest').value, 200), window: $('#w2').value }, shared);
+  }
+  $('#out').innerHTML = ''; $('#manual').innerHTML = '';
+  try {
+    busy(true, 'Starting…', 2);
+    let r;
+    if (TAB === 1) {
+      r = await collectValidate(inp, (m, p) => busy(true, m, p));
+      if (!r.videos.length) throw new Error('No videos found. Try a broader topic, a longer time window, or Worldwide region.');
+      Y = { id: newId(), topic: inp.topic, inputs: inp, videos: r.videos, channels: r.channels, ai: {} };
+    } else {
+      r = await collectTrends(inp, (m, p) => busy(true, m, p));
+      if (!r.videos.length) throw new Error('No trending videos found. Try Worldwide region or add a domain.');
+      inp.domainsUsed = r.domains;
+      Y = { id: newId(), topic: (inp.channel ? 'My channel' : r.domains.length ? r.domains.join(', ') : 'General trends') + ' trends', inputs: inp, videos: r.videos, channels: r.channels, ai: {} };
+    }
+    busy(true, 'Crunching the numbers and saving…', 92); prepare(); await saveRun();
+    busy(false, 'Done. Used about ' + UNITS + ' of your 10,000 free daily YouTube units.'); $('#barI').style.width = '100%';
+    render(); loadHist(); $('#out').scrollIntoView({ behavior: 'smooth' });
+  } catch (e) { busy(false, ''); $('#err').textContent = 'Failed: ' + (e.message || e); }
+}
+
+/* ---------- boot ---------- */
+function showFor(session) {
+  const on = !!session;
+  $('#auth').classList.toggle('hide', on); $('#app').classList.toggle('hide', !on);
+  $('#who').classList.toggle('hide', !on); $('#outBtn').classList.toggle('hide', !on);
+  if (on) { $('#who').textContent = session.user.email; loadHist(); } else { Y = null; $('#out').innerHTML = ''; }
+}
+(async function boot() {
+  syncCfgUI(); try { $('#ytkey').value = ytKey(); } catch (e) {}
+  try {
+    if (SUPABASE_URL.startsWith('PASTE')) throw new Error('Setup missing: put your Supabase URL and anon key at the top of the script in youtube.html.');
+    let base = SUPABASE_URL.trim(); try { base = new URL(base).origin; } catch (e) { throw new Error('The Supabase URL in this file is not valid. It should look like https://abcd.supabase.co'); }
+    SBC = supabase.createClient(base, SUPABASE_ANON.trim());
+    SBC.auth.onAuthStateChange((ev, session) => showFor(session));
+    const { data } = await SBC.auth.getSession(); showFor(data.session);
+  } catch (e) { $('#auth').classList.remove('hide'); $('#aErr').textContent = e.message || 'Could not load. Please refresh.'; }
+})();
+</script>
+</body>
+</html>
